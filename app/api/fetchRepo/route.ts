@@ -11,7 +11,10 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Missing owner or repo' }, { status: 400 });
     }
 
-    const octokit = new Octokit()
+    // Use GitHub token from environment variables if available
+    const octokit = new Octokit({
+        auth: process.env.GITHUB_TOKEN || undefined
+    })
 
     try {
         // If branch is specified, use it for both readme and content requests
