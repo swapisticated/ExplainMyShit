@@ -1,26 +1,193 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #111112;
+  --foreground: #f5f6fa;
+  --accent: #7f5af0;
+  --accent-hover: #6246ea;
+  --surface: #18181b;
+  --surface-alt: #23232a;
+  --border: #282a36;
+  --error: #ff5370;
 }
 
 body {
-  background: var(--background);
+  background: linear-gradient(135deg, #18181b 0%, #23232a 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Geist', Arial, Helvetica, sans-serif;
+  letter-spacing: 0.01em;
+  min-height: 100vh;
+}
+
+h2, h1 {
+  font-family: 'Geist', Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+
+input, button {
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+input:focus, button:focus {
+  outline: 2px solid var(--accent);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: var(--surface-alt);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+.toggle-checkbox {
+  transition: background 0.2s, border 0.2s;
+  appearance: none;
+  width: 2.5rem;
+  height: 1.25rem;
+  background: var(--surface-alt);
+  border-radius: 1.25rem;
+  border: 2px solid var(--border);
+  position: relative;
+  cursor: pointer;
+}
+.toggle-checkbox:checked {
+  background: var(--accent);
+  border-color: var(--accent-hover);
+}
+.toggle-checkbox:focus {
+  outline: 2px solid var(--accent);
+}
+.toggle-label {
+  display: inline-block;
+  width: 2.5rem;
+  height: 1.25rem;
+  background: var(--surface-alt);
+  border-radius: 1.25rem;
+  position: relative;
+  transition: background 0.2s;
+}
+.toggle-checkbox:checked + .toggle-label {
+  background: var(--accent);
+}
+.toggle-checkbox::after {
+  content: "";
+  display: block;
+  width: 1.1rem;
+  height: 1.1rem;
+  background: var(--foreground);
+  border-radius: 50%;
+  position: absolute;
+  top: 0.1rem;
+  left: 0.1rem;
+  transition: left 0.2s;
+}
+.toggle-checkbox:checked::after {
+  left: 1.3rem;
+  background: #fff;
+}
+
+/* Error text */
+.text-red-600 {
+  color: var(--error) !important;
+}
+
+/* Accent text */
+.text-purple-700 {
+  color: var(--accent) !important;
+}
+
+/* Card backgrounds */
+.bg-white {
+  background: var(--surface) !important;
+}
+
+/* Remove old light theme overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111112;
+    --foreground: #f5f6fa;
+    --accent: #7f5af0;
+    --accent-hover: #6246ea;
+    --surface: #18181b;
+    --surface-alt: #23232a;
+    --border: #282a36;
+    --error: #ff5370;
+  }
+  .theme-light {
+    --background: #f5f6fa;
+    --foreground: #18181b;
+    --accent: #7f5af0;
+    --accent-hover: #6246ea;
+    --surface: #fff;
+    --surface-alt: #f0f0f5;
+    --border: #e0e0e0;
+    --error: #ff5370;
+  }
+  .theme-dark {
+    --background: #18181b;
+    --foreground: #f5f6fa;
+    --accent: #7f5af0;
+    --accent-hover: #6246ea;
+    --surface: #23232a;
+    --surface-alt: #282a36;
+    --border: #282a36;
+    --error: #ff5370;
+  }
+  .theme-solarized {
+    --background: #fdf6e3;
+    --foreground: #657b83;
+    --accent: #b58900;
+    --accent-hover: #cb4b16;
+    --surface: #eee8d5;
+    --surface-alt: #f5e9c8;
+    --border: #93a1a1;
+    --error: #dc322f;
+  }
+  .theme-dracula {
+    --background: #282a36;
+    --foreground: #f8f8f2;
+    --accent: #bd93f9;
+    --accent-hover: #ff79c6;
+    --surface: #44475a;
+    --surface-alt: #343746;
+    --border: #6272a4;
+    --error: #ff5555;
+  }
+  .theme-nord {
+    --background: #2e3440;
+    --foreground: #d8dee9;
+    --accent: #88c0d0;
+    --accent-hover: #5e81ac;
+    --surface: #3b4252;
+    --surface-alt: #434c5e;
+    --border: #4c566a;
+    --error: #bf616a;
+  }
+  .theme-gruvbox {
+    --background: #282828;
+    --foreground: #ebdbb2;
+    --accent: #fabd2f;
+    --accent-hover: #fe8019;
+    --surface: #3c3836;
+    --surface-alt: #504945;
+    --border: #665c54;
+    --error: #fb4934;
+  }
+  .theme-monokai {
+    --background: #272822;
+    --foreground: #f8f8f2;
+    --accent: #a6e22e;
+    --accent-hover: #f92672;
+    --surface: #383830;
+    --surface-alt: #49483e;
+    --border: #75715e;
+    --error: #f92672;
+  }
 }
