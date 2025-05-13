@@ -11,18 +11,21 @@
   "dependencies": {
     "@octokit/rest": "^21.1.1",
     "@types/three": "^0.176.0",
+    "3d-force-graph": "^1.77.0",
     "axios": "^1.9.0",
+    "d3-force": "^3.0.0",
     "framer-motion": "^12.11.0",
     "next": "15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-force-graph": "^1.47.6",
+    "react-force-graph-3d": "^1.26.1",
     "three": "^0.176.0",
     "three-spritetext": "^1.9.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/d3-force": "^3.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 
 const Home = () => {
   const [url, setUrl] = useState('');
+  const [branch, setBranch] = useState('');
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [stars, setStars] = useState<{ top: number; left: number; size: number; delay: number }[]>([]);
@@ -26,7 +27,7 @@ const Home = () => {
     generateStars();
   }, []);
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!url.trim()) {
       return;
     }
@@ -42,16 +43,12 @@ const Home = () => {
     repo = repo.replace(/\.git$/, '');
     
     setIsLoading(true);
-    try {
-      const res = await fetch(`/api/fetchRepo?owner=${owner}&repo=${repo}`);
-      const data = await res.json();
-      setData(data);
-    } catch (error) {
-      console.error('Error fetching repository:', error);
-      alert('Failed to fetch repository data. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    
+    // Include branch parameter if provided
+    const branchParam = branch.trim() ? `&branch=${encodeURIComponent(branch.trim())}` : '';
+    
+    // Redirect to visualization page with parameters
+    window.location.href = `/visualization?owner=${owner}&repo=${repo}${branchParam}`;
   }
   
   return (
@@ -96,13 +93,21 @@ const Home = () => {
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-50 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
             <div className="relative bg-[#0d0d2b] rounded-lg p-6">
-              <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+              <div className="flex flex-col space-y-4">
                 <input
                   type="text"
                   placeholder="Paste GitHub repo URL"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="flex-grow bg-[#1a1a4a] border border-[rgba(255,255,255,0.1)] text-white placeholder-blue-300 p-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+                  className="w-full bg-[#1a1a4a] border border-[rgba(255,255,255,0.1)] text-white placeholder-blue-300 p-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                />
+                <input
+                  type="text"
+                  placeholder="Branch name (optional, defaults to main)"
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                  className="w-full bg-[#1a1a4a] border border-[rgba(255,255,255,0.1)] text-white placeholder-blue-300 p-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
                   onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 />
                 <motion.button
@@ -123,26 +128,12 @@ const Home = () => {
                   ) : 'Visualize'}
                 </motion.button>
               </div>
-              <p className="text-xs text-blue-300 mt-3 opacity-80">Enter a GitHub repository URL (e.g., https://github.com/username/repo)</p>
+              <p className="text-xs text-blue-300 mt-3 opacity-80">Enter a GitHub repository URL (e.g., https://github.com/username/repo) and optionally specify a branch</p>
             </div>
           </div>
         </motion.div>
         
-        {data && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="mt-12 max-w-5xl mx-auto bg-[rgba(13,13,50,0.7)] backdrop-blur-lg rounded-2xl p-6 border border-[rgba(255,255,255,0.1)] shadow-xl"
-          >
-            <h2 className="text-2xl font-bold mb-4 text-blue-300">Repository Data</h2>
-            <div className="bg-[#0d0d2b] rounded-lg p-4 overflow-auto max-h-96 scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-[#1a1a4a]">
-              <pre className="text-green-400 font-mono text-sm">
-                {JSON.stringify(data, null, 2)}
-              </pre>
-            </div>
-          </motion.div>
-        )}
+
         
         <div className="mt-16 text-center text-sm text-blue-300 opacity-70">
           <p>© {new Date().getFullYear()} Explain My Shit | Visualize repositories in 3D space</p>
