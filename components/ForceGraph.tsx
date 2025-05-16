@@ -2,32 +2,99 @@
 
 'use client';
 import React, { useRef, useEffect, useState } from 'react';
-import ForceGraph3D from 'react-force-graph-3d';
-import { GraphData, GraphNode, GraphLink } from '@/utils/graphData';
+import ForceGraph3D, { NodeObject } from 'react-force-graph-3d';
+import { GraphData, GraphNode } from '@/utils/graphData';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
+import { GeminiSidebar } from './SideBar';
+import { setCache, getCache, generateCacheKey } from '@/utils/cache';
 
 interface ForceGraphProps {
   graphData: GraphData;
   repoName: string;
+  owner: string;      // Add this
+  repo: string;       // Add this
+  branch: string;     // Add this
 }
 
-const ForceGraph = ({ graphData, repoName }: ForceGraphProps) => {
+const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProps) => {
   const graphRef = useRef<any>(null);
 
   // State to track if auto-rotation is enabled
   const [autoRotate, setAutoRotate] = useState(true);
   const [userInteracting, setUserInteracting] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
+
   const rotationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
+  // Add these near the top with other state declarations
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [fileSummary, setFileSummary] = useState<string | null>(null);
+  const [isCacheEnabled, setIsCacheEnabled] = useState(true); // Add this state
+
   // Apply force graph configurations when component mounts
   useEffect(() => {
     if (graphRef.current && graphData.nodes.length > 0) {
       // Set initial camera position
       graphRef.current.cameraPosition({ z: 300 });
-      
+
+      // Initialize hierarchical layout
+      const initializeHierarchicalLayout = () => {
+        if (!graphRef.current) return;
+
+        // Get the force simulation
+        const forceEngine = graphRef.current.d3Force();
+        if (!forceEngine) return;
+
+        // Configure link distances based on node types
+        forceEngine.link().distance((link: any) => {
+          // Calculate distance based on source node type and target depth
+          const sourceNode = graphData.nodes.find(n => n.id === link.source.id || n.id === link.source);
+          const targetNode = graphData.nodes.find(n => n.id === link.target.id || n.id === link.target);
+
+          if (!sourceNode || !targetNode) return 50;
+
+          // Root connections get more space
+          if (sourceNode.id === 'root') return 80;
+
+          // Directory to directory connections
+          if (sourceNode.type === 'dir' && targetNode.type === 'dir') {
+            return 60;
+          }
+
+          // Directory to file connections
+          if (sourceNode.type === 'dir' && targetNode.type === 'file') {
+            return 40;
+          }
+
+          return 50; // Default distance
+        }).strength(0.3); // Slightly stronger links for stability
+
+        // Enhance charge force for better spacing
+        forceEngine.charge()
+          .strength((node: any) => node.id === 'root' ? -150 : node.type === 'dir' ? -100 : -30)
+          .distanceMax(300);
+
+        // Add radial force to create layers based on path depth
+        forceEngine.radial((node: any) => {
+          if (node.id === 'root') return 0; // Root at center
+
+          // Calculate depth based on path segments
+          const depth = node.path.split('/').filter(Boolean).length;
+          return depth * 60; // Radial distance increases with depth
+        }).strength(0.15); // Gentle force to maintain layers
+
+        // Restart the simulation with new parameters
+        graphRef.current.d3ReheatSimulation();
+      };
+
+      // Initialize after a short delay to ensure the graph is rendered
+      setTimeout(initializeHierarchicalLayout, 100);
+
       // Add event listeners to detect user interaction
       const handleUserInteraction = () => {
         setUserInteracting(true);
@@ -38,9 +105,10 @@ const ForceGraph = ({ graphData, repoName }: ForceGraphProps) => {
         }
         rotationTimeoutRef.current = setTimeout(() => {
           setUserInteracting(false);
-        }, 5000);
+          setAutoRotate(true);
+        }, 3000);
       };
-      
+
       // Add event listeners to the graph container
       const graphContainer = graphRef.current.renderer().domElement.parentElement;
       if (graphContainer) {
@@ -48,7 +116,7 @@ const ForceGraph = ({ graphData, repoName }: ForceGraphProps) => {
         graphContainer.addEventListener('wheel', handleUserInteraction);
         graphContainer.addEventListener('touchstart', handleUserInteraction);
       }
-      
+
       // Cleanup event listeners
       return () => {
         if (graphContainer) {
@@ -62,30 +130,46 @@ const ForceGraph = ({ graphData, repoName }: ForceGraphProps) => {
       };
     }
   }, [graphData]);
-  
+
   // Handle auto-rotation separately
   useEffect(() => {
-    if (!graphRef.current || !autoRotate || userInteracting) return;
-    
-    let angle = 0;
-    const interval = setInterval(() => {
-      if (graphRef.current && autoRotate && !userInteracting) {
-        angle += Math.PI / 2000; // Slower rotation for smoother experience
-        const distance = 300;
-        graphRef.current.cameraPosition({
-          x: distance * Math.sin(angle),
-          z: distance * Math.cos(angle)
-        });
+    if (!graphRef.current) return;
+
+    const fgControls = graphRef.current.controls(); // Access OrbitControls
+
+    let animationFrameId: number;
+
+    const animate = () => {
+      if (autoRotate && !userInteracting) {
+        fgControls.autoRotate = true;
+        fgControls.autoRotateSpeed = 0.5; // Adjust for smoothness
+        fgControls.update();
+      } else {
+        fgControls.autoRotate = false;
       }
-    }, 50); // Slower interval for smoother rotation
-    
-    return () => clearInterval(interval);
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => cancelAnimationFrame(animationFrameId);
   }, [autoRotate, userInteracting]);
+
+
+  // Handle node hover
+  const handleNodeHover = (node: GraphNode | null) => {
+    setHoveredNode(node);
+
+    if (graphRef.current) {
+      graphRef.current.renderer().domElement.style.cursor = node ? 'default' : 'default';
+    }
+  };
 
   // Function to toggle fullscreen
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
-    
+
     if (!isFullscreen) {
       // First approach: Try to make the container element fullscreen
       try {
@@ -144,19 +228,227 @@ const ForceGraph = ({ graphData, repoName }: ForceGraphProps) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (graphRef.current) {
+      const scene = graphRef.current.scene();
+      const starGeometry = new THREE.BufferGeometry();
+      const starMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 1,
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+
+      const starVertices = [];
+      for (let i = 0; i < 500; i++) {
+        const x = THREE.MathUtils.randFloatSpread(1000);
+        const y = THREE.MathUtils.randFloatSpread(1000);
+        const z = THREE.MathUtils.randFloatSpread(1000);
+        starVertices.push(x, y, z);
+      }
+
+      starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+
+      const starField = new THREE.Points(starGeometry, starMaterial);
+      scene.add(starField);
+
+      // const animate = () => {
+      //   const time = Date.now() * 0.002;
+      //   starMaterial.opacity = 0.6 + Math.sin(time) * 0.3;
+      //   requestAnimationFrame(animate);
+      // };
+      // animate();
+    }
+
+
+  }, []);
+
+
+  async function handleNodeClick(node: NodeObject<NodeObject<GraphNode>>, event: MouseEvent): Promise<void> {
+    // Only show tooltip for file nodes
+    if (node.type !== 'file') return;
+
+    setTooltipPosition({ x: event.clientX, y: event.clientY });
+    setSelectedNode(node);
+
+    if (isFullscreen) {
+      await fetchAndShowSummary(node);
+    }
+  }
+
+  // Add this new function to handle summary fetching with caching
+  async function fetchAndShowSummary(node: GraphNode) {
+    try {
+      setShowSidebar(true);
+      setFileSummary('Loading summary...');
+
+      // Generate cache key for this file
+      const cacheKey = generateCacheKey('summary', {
+        owner,
+        repo,
+        path: node.path,
+        branch,
+        version: '1' // Add version to help with cache busting if needed
+      });
+
+      // Check cache first if enabled
+      if (isCacheEnabled) {
+        const cachedSummary = getCache<string>(cacheKey);
+        if (cachedSummary) {
+          console.log('Using cached summary for:', node.path);
+          setFileSummary(cachedSummary);
+          return;
+        }
+      }
+
+      // If no cache or disabled, fetch from API
+      const response = await fetch('/api/fileContents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          owner,
+          repo,
+          path: node.path,
+          branch
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch content');
+      }
+
+      const data = await response.json();
+      
+      if (data.summary) {
+        // Cache the new summary if caching is enabled
+        if (isCacheEnabled) {
+          setCache(cacheKey, data.summary);
+          console.log('Cached summary for:', node.path);
+        }
+        setFileSummary(data.summary);
+      } else {
+        setFileSummary('Failed to generate summary');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setFileSummary('Error: Failed to fetch file content');
+    }
+  }
+
+  // Add these imports at the top
+
+// Inside ForceGraph component, add this effect after other useEffects
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    // Don't close if clicking inside the sidebar or on a node
+    if (
+      event.target instanceof Element && (
+        event.target.closest('.sidebar-container') || // Add this class to your GeminiSidebar
+        event.target.closest('canvas') // ForceGraph canvas
+      )
+    ) {
+      return;
+    }
+    
+    setShowSidebar(false);
+    setTooltipPosition(null);
+  };
+
+  document.addEventListener('click', handleClickOutside);
+  return () => document.removeEventListener('click', handleClickOutside);
+}, []);
+
+// Update the GeminiSidebar implementation in the return statement
+{isFullscreen && (
+  <div className="fixed top-0 right-0 z-50 sidebar-container">
+    <GeminiSidebar
+      defaultOpen={showSidebar}
+      position="right"
+      summary={fileSummary}
+      fileName={selectedNode?.name}
+      onClose={() => {
+        setShowSidebar(false);
+        setFileSummary(null);
+        setSelectedNode(null);
+      }}
+    />
+  </div>
+)}
+
   return (
     <motion.div
       ref={containerRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
-      className={`${isFullscreen ? 'fixed inset-0 z-50 w-screen h-screen' : 'w-full h-[70vh]'} bg-[rgba(10,10,31,0.6)] backdrop-blur-sm ${isFullscreen ? '' : 'rounded-2xl'} overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.1)] relative`}
+      className={`${isFullscreen ? 'fixed inset-0 z-50 ' : 'h-[70vh]'}  backdrop-blur-sm ${isFullscreen ? ' rounded-4xl' : 'rounded-2xl'}  overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.1)] relative`}
     >
+      {/* <GeminiSidebar  position="left" defaultOpen={false} /> */}
+
+
+      {/* {isFullscreen && (
+        <div className="fixed top-0 right-0 z-50">
+          <GeminiSidebar defaultOpen={false} position="right" />
+        </div>
+      )} */}
+
+      {isFullscreen && (
+        <div className="fixed top-0 right-0 z-50 sidebar-container">
+          <GeminiSidebar
+            defaultOpen={showSidebar}
+            position="right"
+            summary={fileSummary}
+            fileName={selectedNode?.name}
+            onClose={() => {
+              setShowSidebar(false);
+              setFileSummary(null);
+              setSelectedNode(null);
+            }}
+          />
+        </div>
+      )}
+
+
       <div className="absolute top-4 left-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm px-4 py-2 rounded-lg">
         <h3 className="text-lg font-semibold text-blue-300">{repoName}</h3>
         <p className="text-xs text-gray-300">Files: {graphData.nodes.length - 1} | Connections: {graphData.links.length}</p>
       </div>
-      
+
+      {hoveredNode && (
+        <div className="absolute bottom-4 left-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm px-4 py-2 rounded-lg">
+          <p className="text-sm text-blue-300">{hoveredNode.name}</p>
+          <p className="text-xs text-gray-300">{hoveredNode.path} ({hoveredNode.type})</p>
+        </div>
+
+        
+      )}
+
+      {tooltipPosition && selectedNode && (
+        <div
+          className="fixed z-50 rounded-full shadow-xl p-2"
+          style={{
+            left: tooltipPosition.x,
+            top: tooltipPosition.y,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <button
+            onClick={() => {
+              setTooltipPosition(null); // Hide tooltip after clicking
+              fetchAndShowSummary(selectedNode);
+            }}
+            className="text-sm text-blue-300 hover:text-blue-100 rounded-md whitespace-nowrap"
+          >
+            Summarize File
+          </button>
+        </div>
+      )}
+
       <button
         onClick={toggleFullscreen}
         className="absolute top-4 right-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm p-2 rounded-lg text-blue-300 hover:text-blue-100 transition-colors duration-200 flex items-center justify-center"
@@ -173,7 +465,22 @@ const ForceGraph = ({ graphData, repoName }: ForceGraphProps) => {
           </svg>
         )}
       </button>
-      
+
+      {/* Add this button to your UI, perhaps near the fullscreen button */}
+      <button
+        onClick={() => {
+          localStorage.clear();
+          setIsCacheEnabled(false);
+          setTimeout(() => setIsCacheEnabled(true), 1000);
+        }}
+        className="absolute top-4 right-16 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm p-2 rounded-lg text-blue-300 hover:text-blue-100 transition-colors duration-200 flex items-center justify-center"
+        title="Clear Cache"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+        </svg>
+      </button>
+
       <ForceGraph3D
         ref={graphRef}
         graphData={graphData}
@@ -188,15 +495,26 @@ const ForceGraph = ({ graphData, repoName }: ForceGraphProps) => {
         linkWidth={0.8}
         linkOpacity={0.5}
         backgroundColor="#0a0a1f"
+        width={screen.width}
+        height={screen.height}
         showNavInfo={false}
         controlType="orbit"
         enableNodeDrag={true}
         enableNavigationControls={true}
+        onNodeHover={handleNodeHover}
+        cooldownTime={5000}
+        forceEngine={'d3'}
+        onNodeClick={handleNodeClick}
         nodeThreeObject={(node: GraphNode) => {
           // Make nodes interactive
           const sphere = new THREE.Mesh(
             new THREE.SphereGeometry(node.val),
-            new THREE.MeshLambertMaterial({ color: node.color, transparent: true, opacity: 0.8 })
+            new THREE.MeshLambertMaterial({
+              color: node.color,
+              transparent: true,
+              opacity: 0.8,
+              emissive: node.type === 'dir' && node.id !== 'root' ? 0x333333 : 0 // Slight glow for directories
+            })
           );
           sphere.userData = { ...node }; // Store node data for interaction
           return sphere;

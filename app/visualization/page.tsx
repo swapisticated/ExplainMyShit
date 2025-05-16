@@ -1,9 +1,14 @@
-'use client'
+"use client"
 
 import React, { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import CommitHistory from '@/components/CommitHistory'
+import TopContributors from '@/components/TopContributors'
+import RepoActivity from '@/components/RepoActivity'
+import RepoSummary from '@/components/RepoSummary'
+import { ArrowLeft } from 'lucide-react'
 
 const VisualizationPage = () => {
   const router = useRouter()
@@ -11,14 +16,15 @@ const VisualizationPage = () => {
   const [data, setData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [stars, setStars] = useState<{ top: number; left: number; size: number; delay: number }[]>([])
+  const [stars, setStars] = useState<{ top: number; left: number; size: number; delay: number; opacity: number }[]>([])
 
   // Get parameters from URL
   const owner = searchParams.get('owner')
   const repo = searchParams.get('repo')
   const branch = searchParams.get('branch')
+  const depth = searchParams.get('depth') || '3' // Default to 3 levels deep
 
-  // Generate random stars for the background
+  // Generate stars for the background - keeping it subtle and elegant
   useEffect(() => {
     const generateStars = () => {
       const newStars = []
@@ -26,8 +32,9 @@ const VisualizationPage = () => {
         newStars.push({
           top: Math.random() * 100,
           left: Math.random() * 100,
-          size: Math.random() * 2 + 1,
-          delay: Math.random() * 5
+          size: Math.random() * 1.5 + 0.2, // Smaller stars
+          delay: Math.random() * 5,
+          opacity: Math.random() * 0.5 + 0.1 // More subtle opacity
         })
       }
       setStars(newStars)
@@ -48,12 +55,13 @@ const VisualizationPage = () => {
       try {
         setIsLoading(true)
         const branchParam = branch ? `&branch=${encodeURIComponent(branch)}` : ''
-        const res = await fetch(`/api/fetchRepo?owner=${owner}&repo=${repo}${branchParam}`)
-        
+        const depthParam = `&depth=${encodeURIComponent(depth)}`
+        const res = await fetch(`/api/fetchRepo?owner=${owner}&repo=${repo}${branchParam}${depthParam}`)
+
         if (!res.ok) {
           throw new Error(`Failed to fetch repository: ${res.status} ${res.statusText}`)
         }
-        
+
         const repoData = await res.json()
         setData(repoData)
       } catch (error) {
@@ -65,25 +73,27 @@ const VisualizationPage = () => {
     }
 
     fetchData()
-  }, [owner, repo, branch])
+  }, [owner, repo, branch, depth])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a1f] to-[#1a1a3a] text-white relative overflow-hidden">
-      {/* Stars background */}
+    <div className="min-h-screen bg-gradient-to-b from-[#000510] to-[#001030] text-white relative overflow-hidden">
+      {/* Subtle star background */}
       {stars.map((star, index) => (
         <div
           key={index}
-          className="absolute rounded-full bg-white opacity-70 animate-pulse"
+          className="absolute rounded-full animate-twinkle"
           style={{
             top: `${star.top}%`,
             left: `${star.left}%`,
             width: `${star.size}px`,
             height: `${star.size}px`,
+            backgroundColor: '#ffffff',
+            opacity: star.opacity,
             animationDelay: `${star.delay}s`,
           }}
         />
       ))}
-      
+
       {/* Main content */}
       <div className="container mx-auto px-4 py-8 relative z-10">
         <div className="flex justify-between items-center mb-8">
@@ -92,39 +102,40 @@ const VisualizationPage = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Link href="/" className="text-blue-300 hover:text-blue-200 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-              </svg>
+            <Link href="/" className="text-slate-300 hover:text-white flex items-center transition-colors">
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Link>
           </motion.div>
-          
-          <motion.h1 
+
+          <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8 }}
-            className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500"
+            className="text-2xl md:text-3xl font-light tracking-wider text-slate-100"
           >
-            Explain My Shit
+            Cosmic Code Explorer
           </motion.h1>
         </div>
 
         {isLoading ? (
           <div className="flex justify-center items-center h-[70vh]">
             <div className="flex flex-col items-center">
-              <svg className="animate-spin h-12 w-12 text-purple-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <p className="text-xl text-blue-300">Loading repository visualization...</p>
+              <div className="relative h-16 w-16">
+                <div className="absolute inset-0 rounded-full border-t-2 border-slate-400 animate-spin"></div>
+                <div className="absolute inset-3 rounded-full border-t-2 border-slate-200 animate-spin-slow"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-2 w-2 rounded-full bg-white"></div>
+                </div>
+              </div>
+              <p className="text-lg text-slate-300 mt-4 font-light">Exploring the cosmos...</p>
             </div>
           </div>
         ) : error ? (
-          <div className="max-w-2xl mx-auto bg-[rgba(13,13,50,0.7)] backdrop-blur-lg rounded-2xl p-8 border border-red-500 shadow-2xl">
-            <h2 className="text-2xl font-bold text-red-400 mb-4">Error</h2>
-            <p className="text-white mb-6">{error}</p>
-            <Link href="/" className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300">
+          <div className="max-w-2xl mx-auto bg-[rgba(0,10,30,0.5)] backdrop-blur-sm rounded-lg p-8 border border-red-900/30 shadow-lg">
+            <h2 className="text-2xl font-light text-red-300 mb-4">Error</h2>
+            <p className="text-slate-300 mb-6">{error}</p>
+            <Link href="/" className="bg-slate-800 text-white font-light px-6 py-3 rounded-md hover:bg-slate-700 transition-all duration-300">
               Try Again
             </Link>
           </div>
@@ -135,38 +146,62 @@ const VisualizationPage = () => {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="max-w-6xl mx-auto"
           >
-            <h2 className="text-2xl font-bold mb-6 text-center text-blue-300">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
+            <h2 className="text-2xl font-light mb-6 text-center text-slate-200">
+              <span className="text-slate-100">
                 {owner}/{repo}{branch ? ` (${branch})` : ''}
               </span>
             </h2>
-            
+
             {/* Components for visualization */}
-            <div className="flex flex-col space-y-8">
-              {/* 3D Visualization */}
-              <div className="w-full">
+            <div className="flex flex-col space-y-12">
+              {/* 3D Visualization Container */}
+              <div className="flex w-full justify-center">
                 {(() => {
-                  // Import and use components directly
                   const { transformRepoToGraph } = require('@/utils/graphData')
                   const ForceGraph = require('@/components/ForceGraph').default
-                  const graphData = transformRepoToGraph(data)
-                  return <ForceGraph graphData={graphData} repoName={`${owner}/${repo}`} />
+                  return <ForceGraph
+                    graphData={transformRepoToGraph(data)}
+                    repoName={`${owner}/${repo}`}
+                    owner={owner!}
+                    repo={repo!}
+                    branch={branch || 'main'}
+                  />
                 })()}
               </div>
-              
+
               {/* Repository Summary */}
               <div className="w-full">
-                {(() => {
-                  const RepoSummary = require('@/components/RepoSummary').default
-                  return <RepoSummary repoData={data} repoUrl={`https://github.com/${owner}/${repo}`} />
-                })()}
+                <RepoSummary repoData={data} repoUrl={`https://github.com/${owner}/${repo}`} />
+              </div>
+
+              {/* Activity and Contributors Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1">
+                  <CommitHistory
+                    owner={owner || ''}
+                    repo={repo || ''}
+                    branch={branch || 'main'}
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <TopContributors
+                    owner={owner || ''}
+                    repo={repo || ''}
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <RepoActivity
+                    owner={owner || ''}
+                    repo={repo || ''}
+                  />
+                </div>
               </div>
             </div>
           </motion.div>
         )}
-        
-        <div className="mt-16 text-center text-sm text-blue-300 opacity-70">
-          <p>© {new Date().getFullYear()} Explain My Shit | Visualize repositories in 3D space</p>
+
+        <div className="mt-16 text-center text-sm text-slate-400 opacity-70">
+          <p>© {new Date().getFullYear()} Cosmic Code Explorer | Venture through the digital universe</p>
         </div>
       </div>
     </div>

@@ -4,18 +4,20 @@
 export interface RepoFile {
   name: string;
   path: string;
-  sha: string;
   size: number;
-  url: string;
-  html_url: string;
-  git_url: string;
-  download_url: string | null;
   type: 'file' | 'dir';
-  _links: {
-    self: string;
-    git: string;
-    html: string;
-  };
+  children?: RepoFile[]; // For directories with nested content
+
+  // sha: string;
+  // url: string;
+  // html_url: string;
+  // git_url: string;
+  // download_url: string | null;
+  // _links: {
+  //   self: string;
+  //   git: string;
+  //   html: string;
+  // };
 }
 
 export interface RepoData {
@@ -54,7 +56,7 @@ const fileTypeColors: Record<string, string> = {
   toml: '#cb171e', // Red
   ini: '#cb171e', // Red
   env: '#cb171e', // Red
-  
+
   // Code files
   js: '#f1e05a', // Yellow
   jsx: '#f1e05a', // Yellow
@@ -73,7 +75,7 @@ const fileTypeColors: Record<string, string> = {
   css: '#563d7c', // CSS purple
   scss: '#c6538c', // SCSS pink
   md: '#083fa1', // Markdown blue
-  
+
   // Default
   dir: '#6cc644', // Green for directories
   default: '#9e9e9e', // Gray for unknown types
@@ -84,7 +86,7 @@ const getFileColor = (fileName: string, type: 'file' | 'dir'): string => {
   if (type === 'dir') {
     return fileTypeColors.dir;
   }
-  
+
   const extension = fileName.split('.').pop()?.toLowerCase() || 'default';
   return fileTypeColors[extension] || fileTypeColors.default;
 };
@@ -92,13 +94,13 @@ const getFileColor = (fileName: string, type: 'file' | 'dir'): string => {
 // Calculate node size based on file size
 const getNodeSize = (size: number, type: 'file' | 'dir'): number => {
   if (type === 'dir') {
-    return 5; // Base size for directories
+    return 6; // Base size for directories
   }
-  
+
   // Logarithmic scale for file sizes to prevent huge nodes
   const baseSize = 2;
   if (size === 0) return baseSize;
-  
+
   return baseSize + Math.log10(size) * 0.8;
 };
 
@@ -106,7 +108,7 @@ const getNodeSize = (size: number, type: 'file' | 'dir'): number => {
 export const transformRepoToGraph = (repoData: RepoData): GraphData => {
   const nodes: GraphNode[] = [];
   const links: GraphLink[] = [];
-  
+
   // Add root node (repository)
   const rootNodeId = 'root';
   nodes.push({
@@ -118,31 +120,38 @@ export const transformRepoToGraph = (repoData: RepoData): GraphData => {
     color: '#6cc644',
     val: 6,
   });
-  
-  // Process files and directories
-  repoData.files.forEach((file) => {
-    const nodeId = file.path;
-    
-    // Add node
-    nodes.push({
-      id: nodeId,
-      name: file.name,
-      path: file.path,
-      type: file.type,
-      size: file.size,
-      color: getFileColor(file.name, file.type),
-      val: getNodeSize(file.size, file.type),
-    });
-    
-    // Link to parent
-    const parentPath = file.path.split('/').slice(0, -1).join('/');
-    const parentId = parentPath || rootNodeId;
-    
-    links.push({
-      source: parentId,
-      target: nodeId,
-    });
-  });
-  
+
+  // Process files and directories recursively
+  const processFiles = (files: RepoFile[], parentId = rootNodeId) => {
+    for (const file of files) {
+      const nodeId = file.path;
+
+      // Add node
+      nodes.push({
+        id: nodeId,
+        name: file.name,
+        path: file.path,
+        type: file.type,
+        size: file.size,
+        color: getFileColor(file.name, file.type),
+        val: getNodeSize(file.size, file.type),
+      });
+
+      // Link to parent
+      links.push({
+        source: parentId,
+        target: nodeId,
+      });
+
+      // Process children if this is a directory with children
+      if (file.type === 'dir' && file.children && file.children.length > 0) {
+        processFiles(file.children, nodeId);
+      }
+    }
+  };
+
+  processFiles(repoData.files);
+  console.log(nodes, links);
+
   return { nodes, links };
 };

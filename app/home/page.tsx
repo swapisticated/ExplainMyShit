@@ -54,6 +54,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0a1f] to-[#1a1a3a] text-white relative overflow-hidden">
       {/* Stars background */}
+      
       {stars.map((star, index) => (
         <div
           key={index}
