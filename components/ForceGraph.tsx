@@ -1,4 +1,4 @@
-// components/ForceGraph.tsx
+//components/ForceGraph.tsx
 
 'use client';
 import React, { useRef, useEffect, useState } from 'react';
@@ -12,29 +12,27 @@ import { setCache, getCache, generateCacheKey } from '@/utils/cache';
 interface ForceGraphProps {
   graphData: GraphData;
   repoName: string;
-  owner: string;      // Add this
-  repo: string;       // Add this
-  branch: string;     // Add this
+  owner: string;
+  repo: string;
+  branch: string;
 }
 
 const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProps) => {
   const graphRef = useRef<any>(null);
-
-  // State to track if auto-rotation is enabled
-  const [autoRotate, setAutoRotate] = useState(true);
-  const [userInteracting, setUserInteracting] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
-
-  const rotationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Add these near the top with other state declarations
-  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  // Core state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [fileSummary, setFileSummary] = useState<string | null>(null);
-  const [isCacheEnabled, setIsCacheEnabled] = useState(true); // Add this state
+  const [isCacheEnabled, setIsCacheEnabled] = useState(true);
+
+  // Auto-rotation state
+  const [autoRotate, setAutoRotate] = useState(true);
+  const [userInteracting, setUserInteracting] = useState(false);
+  const rotationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Apply force graph configurations when component mounts
   useEffect(() => {
@@ -105,8 +103,8 @@ const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProp
         }
         rotationTimeoutRef.current = setTimeout(() => {
           setUserInteracting(false);
-          setAutoRotate(true);
-        }, 3000);
+          setAutoRotate(false);
+        }, 5000);
       };
 
       // Add event listeners to the graph container
@@ -156,13 +154,42 @@ const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProp
     return () => cancelAnimationFrame(animationFrameId);
   }, [autoRotate, userInteracting]);
 
+  // Add starfield background effect
+  useEffect(() => {
+    if (graphRef.current) {
+      const scene = graphRef.current.scene();
+      const starGeometry = new THREE.BufferGeometry();
+      const starMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 1,
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+
+      const starVertices = [];
+      for (let i = 0; i < 500; i++) {
+        const x = THREE.MathUtils.randFloatSpread(1000);
+        const y = THREE.MathUtils.randFloatSpread(1000);
+        const z = THREE.MathUtils.randFloatSpread(1000);
+        starVertices.push(x, y, z);
+      }
+
+      starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+
+      const starField = new THREE.Points(starGeometry, starMaterial);
+      scene.add(starField);
+    }
+  }, []);
 
   // Handle node hover
   const handleNodeHover = (node: GraphNode | null) => {
     setHoveredNode(node);
 
     if (graphRef.current) {
-      graphRef.current.renderer().domElement.style.cursor = node ? 'default' : 'default';
+      graphRef.current.renderer().domElement.style.cursor = node ? 'pointer' : 'default';
     }
   };
 
@@ -228,58 +255,40 @@ const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProp
     };
   }, []);
 
-  useEffect(() => {
-    if (graphRef.current) {
-      const scene = graphRef.current.scene();
-      const starGeometry = new THREE.BufferGeometry();
-      const starMaterial = new THREE.PointsMaterial({
-        color: 0xffffff,
-        size: 1,
-        sizeAttenuation: true,
-        transparent: true,
-        opacity: 0.9,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      });
-
-      const starVertices = [];
-      for (let i = 0; i < 500; i++) {
-        const x = THREE.MathUtils.randFloatSpread(1000);
-        const y = THREE.MathUtils.randFloatSpread(1000);
-        const z = THREE.MathUtils.randFloatSpread(1000);
-        starVertices.push(x, y, z);
-      }
-
-      starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-
-      const starField = new THREE.Points(starGeometry, starMaterial);
-      scene.add(starField);
-
-      // const animate = () => {
-      //   const time = Date.now() * 0.002;
-      //   starMaterial.opacity = 0.6 + Math.sin(time) * 0.3;
-      //   requestAnimationFrame(animate);
-      // };
-      // animate();
-    }
-
-
-  }, []);
-
-
-  async function handleNodeClick(node: NodeObject<NodeObject<GraphNode>>, event: MouseEvent): Promise<void> {
-    // Only show tooltip for file nodes
+  // Simplified node click handler - directly opens sidebar with summary
+  async function handleNodeClick(node: NodeObject<GraphNode>) {
+    // Only handle file nodes
     if (node.type !== 'file') return;
 
-    setTooltipPosition({ x: event.clientX, y: event.clientY });
+    // Set selected node and show sidebar
     setSelectedNode(node);
 
-    if (isFullscreen) {
-      await fetchAndShowSummary(node);
-    }
+    // Fetch and display the summary
+    await fetchAndShowSummary(node);
   }
 
-  // Add this new function to handle summary fetching with caching
+  // Handle click outside to close sidebar
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Don't close if clicking inside the sidebar or on a node
+      if (
+        event.target instanceof Element && (
+          event.target.closest('.sidebar-container') || // For clicking in sidebar
+          event.target.closest('canvas') // For clicking on canvas (we'll handle node clicks separately)
+        )
+      ) {
+        return;
+      }
+
+      // Close sidebar when clicking elsewhere
+      setShowSidebar(false);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // Function to fetch file summary with caching
   async function fetchAndShowSummary(node: GraphNode) {
     try {
       setShowSidebar(true);
@@ -323,7 +332,7 @@ const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProp
       }
 
       const data = await response.json();
-      
+
       if (data.summary) {
         // Cache the new summary if caching is enabled
         if (isCacheEnabled) {
@@ -340,46 +349,6 @@ const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProp
     }
   }
 
-  // Add these imports at the top
-
-// Inside ForceGraph component, add this effect after other useEffects
-useEffect(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    // Don't close if clicking inside the sidebar or on a node
-    if (
-      event.target instanceof Element && (
-        event.target.closest('.sidebar-container') || // Add this class to your GeminiSidebar
-        event.target.closest('canvas') // ForceGraph canvas
-      )
-    ) {
-      return;
-    }
-    
-    setShowSidebar(false);
-    setTooltipPosition(null);
-  };
-
-  document.addEventListener('click', handleClickOutside);
-  return () => document.removeEventListener('click', handleClickOutside);
-}, []);
-
-// Update the GeminiSidebar implementation in the return statement
-{isFullscreen && (
-  <div className="fixed top-0 right-0 z-50 sidebar-container">
-    <GeminiSidebar
-      defaultOpen={showSidebar}
-      position="right"
-      summary={fileSummary}
-      fileName={selectedNode?.name}
-      onClose={() => {
-        setShowSidebar(false);
-        setFileSummary(null);
-        setSelectedNode(null);
-      }}
-    />
-  </div>
-)}
-
   return (
     <motion.div
       ref={containerRef}
@@ -388,20 +357,12 @@ useEffect(() => {
       transition={{ duration: 0.8 }}
       className={`${isFullscreen ? 'fixed inset-0 z-50 ' : 'h-[70vh]'}  backdrop-blur-sm ${isFullscreen ? ' rounded-4xl' : 'rounded-2xl'}  overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.1)] relative`}
     >
-      {/* <GeminiSidebar  position="left" defaultOpen={false} /> */}
-
-
-      {/* {isFullscreen && (
-        <div className="fixed top-0 right-0 z-50">
-          <GeminiSidebar defaultOpen={false} position="right" />
-        </div>
-      )} */}
-
+      {/* Sidebar (always in the DOM, positioned via CSS) */}
       {isFullscreen && (
         <div className="fixed top-0 right-0 z-50 sidebar-container">
           <GeminiSidebar
             defaultOpen={showSidebar}
-            position="right"
+            position="left"
             summary={fileSummary}
             fileName={selectedNode?.name}
             onClose={() => {
@@ -413,42 +374,23 @@ useEffect(() => {
         </div>
       )}
 
+      {/* Background stars */}
 
+      {/* Repository info box */}
       <div className="absolute top-4 left-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm px-4 py-2 rounded-lg">
         <h3 className="text-lg font-semibold text-blue-300">{repoName}</h3>
         <p className="text-xs text-gray-300">Files: {graphData.nodes.length - 1} | Connections: {graphData.links.length}</p>
       </div>
 
+      {/* Hovered node info */}
       {hoveredNode && (
         <div className="absolute bottom-4 left-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm px-4 py-2 rounded-lg">
           <p className="text-sm text-blue-300">{hoveredNode.name}</p>
           <p className="text-xs text-gray-300">{hoveredNode.path} ({hoveredNode.type})</p>
         </div>
-
-        
       )}
 
-      {tooltipPosition && selectedNode && (
-        <div
-          className="fixed z-50 rounded-full shadow-xl p-2"
-          style={{
-            left: tooltipPosition.x,
-            top: tooltipPosition.y,
-            transform: 'translate(-50%, -100%)',
-          }}
-        >
-          <button
-            onClick={() => {
-              setTooltipPosition(null); // Hide tooltip after clicking
-              fetchAndShowSummary(selectedNode);
-            }}
-            className="text-sm text-blue-300 hover:text-blue-100 rounded-md whitespace-nowrap"
-          >
-            Summarize File
-          </button>
-        </div>
-      )}
-
+      {/* Fullscreen toggle button */}
       <button
         onClick={toggleFullscreen}
         className="absolute top-4 right-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm p-2 rounded-lg text-blue-300 hover:text-blue-100 transition-colors duration-200 flex items-center justify-center"
@@ -466,7 +408,7 @@ useEffect(() => {
         )}
       </button>
 
-      {/* Add this button to your UI, perhaps near the fullscreen button */}
+      {/* Cache clear button */}
       <button
         onClick={() => {
           localStorage.clear();
@@ -481,7 +423,9 @@ useEffect(() => {
         </svg>
       </button>
 
-      <ForceGraph3D
+
+      {/* Main Force Graph component */}
+      {/* <ForceGraph3D
         ref={graphRef}
         graphData={graphData}
         nodeLabel={(node: GraphNode) => `${node.name} (${node.type})`}
@@ -513,7 +457,56 @@ useEffect(() => {
               color: node.color,
               transparent: true,
               opacity: 0.8,
-              emissive: node.type === 'dir' && node.id !== 'root' ? 0x333333 : 0 // Slight glow for directories
+              emissive: node.type === 'dir' && node.id !== 'root' ? 0x292626 : 0x3a2b42 // Slight glow for directories
+            })
+          );
+          sphere.userData = { ...node }; // Store node data for interaction
+          return sphere;
+        }}
+      /> */}
+      <ForceGraph3D
+        ref={graphRef}
+        graphData={graphData}
+        nodeLabel={(node) => {
+          const depth = node.path?.split('/')?.length || 0;
+          return depth <= 3 ? `${node.name} (${node.type})` : '';
+        }}
+        nodeColor={(node: GraphNode) => node.color}
+        nodeVal={(node: GraphNode) => node.val}
+        linkDirectionalParticles={2}  // Reduced
+        linkDirectionalParticleSpeed={0.005}
+        linkDirectionalParticleWidth={1}
+        linkDirectionalArrowLength={2}
+        linkDirectionalArrowRelPos={1}
+        linkWidth={0.3}
+        linkOpacity={0.5}
+        linkMaterial={() => {
+          const material = new THREE.MeshBasicMaterial({ color: 0x999999 });
+          material.transparent = true;
+          material.opacity = 0.4;
+          return material;
+        }}
+        
+        backgroundColor="#0a0a1f"
+        width={screen.width}
+        height={screen.height}
+        showNavInfo={true}
+        controlType="orbit"
+        enableNodeDrag={true}
+        enableNavigationControls={true}
+        onNodeHover={handleNodeHover}
+        cooldownTime={5000}
+        forceEngine={'d3'}
+        onNodeClick={handleNodeClick}
+        nodeThreeObject={(node: GraphNode) => {
+          // Make nodes interactive
+          const sphere = new THREE.Mesh(
+            new THREE.SphereGeometry(node.val),
+            new THREE.MeshLambertMaterial({
+              color: node.color,
+              transparent: true,
+              opacity: 0.8,
+              emissive: node.type === 'dir' && node.id !== 'root' ? 0x292626 : 0x3a2b42 // Slight glow for directories
             })
           );
           sphere.userData = { ...node }; // Store node data for interaction

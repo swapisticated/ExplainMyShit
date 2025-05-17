@@ -52,7 +52,7 @@ const CommitHistory: React.FC<Props> = ({ owner, repo, branch = "", perPage = 5 
   }, [page, owner, repo, branch, perPage])
 
   return (
-    <div className="bg-[rgba(0,10,30,0.4)] backdrop-blur-md rounded-lg p-4 border border-[rgba(255,255,255,0.05)] h-full">
+    <div className="bg-[rgba(0,10,30,0.4)] custom-scrollbar backdrop-blur-md rounded-lg p-4 border border-[rgba(255,255,255,0.05)] h-full">
       <h2 className="text-lg font-light tracking-wide mb-4 text-slate-100 flex items-center">
         <GitCommit className="w-5 h-5 mr-2 text-slate-300" />
         Commit History
@@ -75,7 +75,7 @@ const CommitHistory: React.FC<Props> = ({ owner, repo, branch = "", perPage = 5 
         ) : commits.length === 0 ? (
           <div className="text-center py-8 text-slate-400">No commits found</div>
         ) : (
-          <ul className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <ul className="space-y-2 custom-scrollbar max-h-[300px] overflow-y-auto ">
             {commits.map((commit) => (
               <li
                 key={commit.sha}

@@ -101,6 +101,9 @@ module.exports = {
     },
   },
   plugins: [
-    require('@tailwindcss/typography'), require("tailwindcss-animate")
+    require('@tailwindcss/typography'), require("tailwindcss-animate"), require('tailwind-scrollbar')
   ],
+  variants: {
+    scrollbar: ['dark']
+  }
 }

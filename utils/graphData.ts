@@ -81,6 +81,39 @@ const fileTypeColors: Record<string, string> = {
   default: '#9e9e9e', // Gray for unknown types
 };
 
+// const fileTypeColors: Record<string, string> = {
+//   // Config files – Solar golds and mars reds
+//   json: '#d1b654',     // Muted solar gold
+//   yml: '#a44242',      // Mars red
+//   yaml: '#a44242',
+//   toml: '#a44242',
+//   ini: '#a44242',
+//   env: '#a44242',
+
+//   // Code files – Earthy and cosmic hues
+//   js: '#d1b654',       // Same gold as JSON
+//   jsx: '#d1b654',
+//   ts: '#446e9b',       // Deep cosmic blue
+//   tsx: '#446e9b',
+//   py: '#5e88af',       // Muted starlight blue
+//   rb: '#8e4a53',       // Dusty ruby
+//   java: '#a06b3f',     // Dried clay
+//   go: '#4c8891',       // Faded ocean blue
+//   rs: '#c29a6b',       // Rusty bronze
+//   php: '#6d5d8c',      // Dimmed twilight purple
+//   c: '#606060',        // Carbon gray
+//   cpp: '#a65f73',      // Slightly rich dusty rose
+//   cs: '#5a8051',       // Faded forest green
+//   html: '#b14d2e',     // Burnt orange
+//   css: '#5c4f73',      // Smoky amethyst
+//   scss: '#a85d76',     // Faded wine
+//   md: '#486d88',       // Dull storm blue
+
+//   // Default
+//   dir: '#508a57',      // Desaturated moss green
+//   default: '#6a6a6a',  // Graphite gray
+// };
+
 // Get color based on file extension
 const getFileColor = (fileName: string, type: 'file' | 'dir'): string => {
   if (type === 'dir') {
@@ -93,7 +126,7 @@ const getFileColor = (fileName: string, type: 'file' | 'dir'): string => {
 
 // Calculate node size based on file size
 const getNodeSize = (size: number, type: 'file' | 'dir'): number => {
-  if (type === 'dir') {
+  if (type === 'dir') { 
     return 6; // Base size for directories
   }
 

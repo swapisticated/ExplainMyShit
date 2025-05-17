@@ -1,50 +1,58 @@
 import { Octokit } from "@octokit/rest";
 import { NextResponse } from "next/server";
+import pLimit from "p-limit";
+
+const limit = pLimit(5); // Limit concurrent GitHub API calls
+
 
 export async function GET(req: Request) {
-    const {searchParams} = new URL(req.url);
-    const owner = searchParams.get('owner');
-    const repo = searchParams.get('repo');
-    const branch = searchParams.get('branch');
-    const depth = parseInt(searchParams.get('depth') || '4'); // Control recursion depth
+    const { searchParams } = new URL(req.url);
+    const owner = searchParams.get("owner");
+    const repo = searchParams.get("repo");
+    const branch = searchParams.get("branch");
+    const depth = Math.min(parseInt(searchParams.get("depth") || "2"), 5); // cap depth
+    const path = searchParams.get("path") || ""; // allow targeting specific path
 
     if (!owner || !repo) {
-        return NextResponse.json({ error: 'Missing owner or repo' }, { status: 400 });
+        return NextResponse.json({ error: "Missing owner or repo" }, { status: 400 });
     }
 
-    // Use GitHub token from environment variables if available
     const octokit = new Octokit({
-        auth: process.env.GITHUB_TOKEN || undefined
-    })
+        auth: process.env.GITHUB_TOKEN || undefined,
+    });
 
     try {
-        // Fetch the repo contents recursively
-        const repoContents = await fetchRepoContentsRecursively(octokit, owner, repo, branch, '', depth);
-        
-        // Only fetch readme at the root level
-        let readmeText = '';
+        // Fetch repo contents
+        const repoContents = await fetchRepoContentsRecursively(
+            octokit,
+            owner,
+            repo,
+            branch,
+            path,
+            depth
+        );
+
+        // Fetch README from root
+        let readmeText = "";
         try {
-            const readmeOptions = { owner, repo };
-            if (branch) {
-                Object.assign(readmeOptions, { ref: branch });
-            }
+            const readmeOptions: any = { owner, repo };
+            if (branch) readmeOptions.ref = branch;
             const readme = await octokit.repos.getReadme(readmeOptions);
-            readmeText = Buffer.from(readme.data.content, 'base64').toString('utf-8');
+            readmeText = Buffer.from(readme.data.content, "base64").toString("utf-8");
         } catch (error) {
-            console.error('Error fetching README:', error);
+            console.warn("README not found or error fetching it:", error);
         }
-        
+
         return NextResponse.json({
             readme: readmeText,
             files: repoContents,
-            branch: branch || 'default'
+            branch: branch || "default",
         });
-    }
-    catch (e: any) {
+    } catch (e: any) {
+        console.error("Fetch failed:", e);
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
-
 // Recursive function to fetch repository contents including subdirectories
 async function fetchRepoContentsRecursively(
     octokit: Octokit,

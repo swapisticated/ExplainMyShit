@@ -50,7 +50,7 @@ const RepoSummary = ({ repoData, repoUrl }: RepoSummaryProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <h3 className="text-lg font-light mb-3 text-slate-200">Summary</h3>
-          <div className="space-y-3">
+          <div className="space-y-3 text-sm">
             <p className="text-slate-300 flex justify-between">
               <span className="text-slate-400">Repository:</span>
               <span>{repoName}</span>
@@ -82,7 +82,7 @@ const RepoSummary = ({ repoData, repoUrl }: RepoSummaryProps) => {
               .slice(0, 6)
               .map(([type, count]) => (
                 <div key={type} className="flex items-center justify-between">
-                  <span className="text-slate-300 flex items-center">
+                  <span className="text-slate-300 text-sm flex items-center">
                     {type === "Directories" ? (
                       <Folder className="w-4 h-4 mr-2 text-slate-400" />
                     ) : (
@@ -102,7 +102,7 @@ const RepoSummary = ({ repoData, repoUrl }: RepoSummaryProps) => {
           <h3 className="text-lg font-light mb-3 text-slate-200">README Preview</h3>
           <div className="bg-[rgba(0,5,20,0.5)] rounded-md p-4 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
             <div className="prose prose-invert prose-sm max-w-none">
-              <pre className="text-slate-300 whitespace-pre-wrap font-mono text-xs">
+              <pre className="text-slate-400 whitespace-pre-wrap font-mono text-sm">
                 {repoData.readme.slice(0, 500)}
                 {repoData.readme.length > 500 && "..."}
               </pre>
