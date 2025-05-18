@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Settings, Sparkles, Layers, Info, ChevronRight, ChevronLeft, X } from "lucide-react"
+import {Sparkles,  Info, ChevronRight, ChevronLeft, X } from "lucide-react"
 import { motion } from "framer-motion"
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -19,7 +19,7 @@ interface SidebarProps {
 
 
 export function GeminiSidebar({ defaultOpen = false, position = "left", summary, fileName, onClose }: SidebarProps) {
-  const [activeTab, setActiveTab] = React.useState("apis")
+  // const [activeTab, setActiveTab] = React.useState("apis")
   const [showTooltip, setShowTooltip] = React.useState(false)
   const tooltipRef = React.useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
