@@ -93,7 +93,7 @@ const VisualizationContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#000510] to-[#001030] text-white relative overflow-hidden">
-      {/* Subtle star background */}
+      {/* Stars background - keep existing code */}
       {stars.map((star, index) => (
         <div
           key={index}
@@ -110,15 +110,16 @@ const VisualizationContent = () => {
         />
       ))}
 
-      {/* Main content */}
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        <div className="flex justify-between items-center mb-8">
+      {/* Main content - Update container styles */}
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 relative z-10">
+        {/* Header Section - More responsive */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-8 mb-4 sm:mb-8">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Link href="/" className="text-slate-300 hover:text-white flex items-center transition-colors">
+            <Link href="/" className="text-slate-300 hover:text-white flex items-center transition-colors text-sm sm:text-base">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Link>
@@ -128,15 +129,16 @@ const VisualizationContent = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8 }}
-            className="text-2xl md:text-3xl font-light tracking-wider text-slate-100"
+            className="text-xl sm:text-2xl md:text-3xl font-light tracking-wider text-slate-100 order-first sm:order-none"
           >
             Astro Repo
           </motion.h1>
         </div>
 
+        {/* Loading State - Update for better mobile display */}
         {isLoading ? (
-          <div className="flex justify-center items-center h-[70vh]">
-            <div className="flex flex-col items-center">
+          <div className="flex justify-center items-center h-[50vh] sm:h-[70vh]">
+            <div className="flex flex-col items-center scale-75 sm:scale-100">
               <div className="relative h-16 w-16">
                 <div className="absolute inset-0 rounded-full border-t-2 border-slate-400 animate-spin"></div>
                 <div className="absolute inset-3 rounded-full border-t-2 border-slate-200 animate-spin-slow"></div>
@@ -144,14 +146,15 @@ const VisualizationContent = () => {
                   <div className="h-2 w-2 rounded-full bg-white"></div>
                 </div>
               </div>
-              <p className="text-lg text-slate-300 mt-4 font-light">Exploring the cosmos...</p>
+              <p className="text-base sm:text-lg text-slate-300 mt-4 font-light">Exploring the cosmos...</p>
             </div>
           </div>
         ) : error ? (
-          <div className="max-w-2xl mx-auto bg-[rgba(0,10,30,0.5)] backdrop-blur-sm rounded-lg p-8 border border-red-900/30 shadow-lg">
-            <h2 className="text-2xl font-light text-red-300 mb-4">Error</h2>
-            <p className="text-slate-300 mb-6">{error}</p>
-            <Link href="/" className="bg-slate-800 text-white font-light px-6 py-3 rounded-md hover:bg-slate-700 transition-all duration-300">
+          // Error State - Better mobile layout
+          <div className="max-w-2xl mx-auto bg-[rgba(0,10,30,0.5)] backdrop-blur-sm rounded-lg p-4 sm:p-8 border border-red-900/30 shadow-lg m-4 sm:m-0">
+            <h2 className="text-xl sm:text-2xl font-light text-red-300 mb-3 sm:mb-4">Error</h2>
+            <p className="text-sm sm:text-base text-slate-300 mb-4 sm:mb-6">{error}</p>
+            <Link href="/" className="inline-block bg-slate-800 text-white text-sm sm:text-base font-light px-4 sm:px-6 py-2 sm:py-3 rounded-md hover:bg-slate-700 transition-all duration-300">
               Try Again
             </Link>
           </div>
@@ -160,32 +163,19 @@ const VisualizationContent = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="max-w-6xl mx-auto"
+            className="max-w-6xl mx-auto space-y-6 sm:space-y-12"
           >
-            <h2 className="text-2xl font-light mb-6 text-center text-slate-200">
-              <span className="text-slate-100">
+            {/* Repository Title - Responsive text */}
+            <h2 className="text-lg sm:text-xl md:text-2xl font-light mb-4 sm:mb-6 text-center text-slate-200 px-2">
+              <span className="text-slate-100 break-words">
                 {owner}/{repo}{branch ? ` (${branch})` : ''}
               </span>
             </h2>
 
             {/* Components for visualization */}
-            <div className="flex flex-col space-y-12">
-              {/* 3D Visualization Container */}
-              {/* <div className="flex w-full justify-center">
-                {(() => {
-                  const { transformRepoToGraph } = require('@/utils/graphData')
-                  const ForceGraph = require('@/components/ForceGraph').default
-                  return <ForceGraph
-                    graphData={transformRepoToGraph(data)}
-                    repoName={`${owner}/${repo}`}
-                    owner={owner!}
-                    repo={repo!}
-                    branch={branch || 'main'}
-                  />
-                })()}
-              </div> */}
-
-              <div className="flex w-full justify-center">
+            <div className="flex flex-col space-y-6 sm:space-y-12">
+              {/* 3D Visualization Container - Adjust height for mobile */}
+              <div className="flex w-full justify-center h-[50vh] sm:h-[70vh]">
                 <ForceGraph
                   graphData={transformRepoToGraph(data)}
                   repoName={`${owner}/${repo}`}
@@ -195,27 +185,27 @@ const VisualizationContent = () => {
                 />
               </div>
 
-              {/* Repository Summary */}
-              <div className="w-full">
+              {/* Repository Summary - Full width on mobile */}
+              <div className="w-full px-2 sm:px-0">
                 <RepoSummary repoData={data} repoUrl={`https://github.com/${owner}/${repo}`} />
               </div>
 
-              {/* Activity and Contributors Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1">
+              {/* Activity and Contributors Section - Stack on mobile */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-2 sm:px-0">
+                <div className="w-full">
                   <CommitHistory
                     owner={owner || ''}
                     repo={repo || ''}
                     branch={branch || 'main'}
                   />
                 </div>
-                <div className="lg:col-span-1">
+                <div className="w-full">
                   <TopContributors
                     owner={owner || ''}
                     repo={repo || ''}
                   />
                 </div>
-                <div className="lg:col-span-1">
+                <div className="w-full">
                   <RepoActivity
                     owner={owner || ''}
                     repo={repo || ''}
@@ -226,7 +216,8 @@ const VisualizationContent = () => {
           </motion.div>
         )}
 
-        <div className="mt-16 text-center text-sm text-slate-400 opacity-70">
+        {/* Footer - Responsive text and spacing */}
+        <div className="mt-8 sm:mt-16 text-center text-xs sm:text-sm text-slate-400 opacity-70 px-4">
           <p>© {new Date().getFullYear()} Astro Repo | Venture through the digital universe</p>
         </div>
       </div>
@@ -234,13 +225,13 @@ const VisualizationContent = () => {
   )
 }
 
-// Main page component with Suspense boundary
+// Update the loading fallback for better mobile display
 const VisualizationPage = () => {
   return (
     <Suspense 
       fallback={
         <div className="flex justify-center items-center h-screen bg-gradient-to-b from-[#000510] to-[#001030]">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+          <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-white"></div>
         </div>
       }
     >

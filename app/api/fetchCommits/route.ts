@@ -18,12 +18,20 @@ export async function GET(req: Request) {
     });
 
     try {
+        // First try to get the default branch
+        const repoInfo = await octokit.repos.get({
+            owner,
+            repo,
+        });
+
+        const defaultBranch = repoInfo.data.default_branch;
+
         const response = await octokit.repos.listCommits({
             owner,
             repo,
-            sha: branch || undefined,
-            per_page,
-            page,
+            sha: branch || defaultBranch,
+            per_page: Number(per_page),
+            page: Number(page),
         });
 
         const commits = response.data.map((commit) => ({
@@ -41,7 +49,6 @@ export async function GET(req: Request) {
             per_page,
             hasNextPage: response.data.length === per_page, // crude next page check
         });
-        // ...existing code...
     } catch (e: unknown) {
         console.error("Error fetching commits:", e);
         if (e instanceof Error) {

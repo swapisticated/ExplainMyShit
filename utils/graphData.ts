@@ -75,6 +75,10 @@ export const fileTypeColors:  Record<string, string> = {
   css: '#563d7c', // CSS purple
   scss: '#c6538c', // SCSS pink
   md: '#083fa1', // Markdown blue
+  h: '#e34c26', // Header files
+  m: '#e34c26', // Objective-C files
+  swift: '#ffac45', // Swift orange
+  
 
   // Default
   dir: '#6cc644', // Green for directories

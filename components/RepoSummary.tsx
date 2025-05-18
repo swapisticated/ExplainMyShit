@@ -1,6 +1,7 @@
 "use client"
 import { motion } from "framer-motion"
 import { FileText, Folder, Info } from "lucide-react"
+import ReactMarkdown from "react-markdown"
 import type { RepoData } from "@/utils/graphData"
 
 interface RepoSummaryProps {
@@ -102,10 +103,9 @@ const RepoSummary = ({ repoData, repoUrl }: RepoSummaryProps) => {
           <h3 className="text-lg font-light mb-3 text-slate-200">README Preview</h3>
           <div className="bg-[rgba(0,5,20,0.5)] rounded-md p-4 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
             <div className="prose prose-invert prose-sm max-w-none">
-              <pre className="text-slate-400 whitespace-pre-wrap font-mono text-sm">
-                {repoData.readme.slice(0, 500)}
-                {repoData.readme.length > 500 && "..."}
-              </pre>
+              <ReactMarkdown>
+                {`${repoData.readme.slice(0, 500)}${repoData.readme.length > 500 ? "..." : ""}`}
+              </ReactMarkdown>
             </div>
           </div>
         </div>

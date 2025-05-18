@@ -7,6 +7,14 @@ module.exports = {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '375px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+      },
       animation: {
         'twinkle': 'twinkle 4s ease-in-out infinite',
         'spin-slow': 'spin 6s linear infinite',
@@ -24,21 +32,29 @@ module.exports = {
       typography: {
         DEFAULT: {
           css: {
-            color: '#fff',
+            maxWidth: 'none',
+            color: 'inherit',
             a: {
-              color: '#3b82f6',
+              color: '#60a5fa',
+              textDecoration: 'none',
               '&:hover': {
-                color: '#60a5fa',
+                textDecoration: 'underline',
               },
             },
-            'h1,h2,h3,h4': {
-              color: '#93c5fd',
-            },
             code: {
-              color: '#93c5fd',
-              backgroundColor: '#1e293b',
-              padding: '0.25rem',
-              borderRadius: '0.25rem',
+              color: '#86efac',
+              backgroundColor: 'rgba(0,0,0,0.2)',
+              paddingLeft: '4px',
+              paddingRight: '4px',
+              paddingTop: '2px',
+              paddingBottom: '2px',
+              borderRadius: '0.375rem',
+            },
+            'code::before': {
+              content: 'none',
+            },
+            'code::after': {
+              content: 'none',
             },
           },
         },
