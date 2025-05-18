@@ -355,7 +355,7 @@ export default function Home() {
         <Separator className="max-w-md mx-auto my-16 bg-white/10" />
 
         <div className="text-center text-sm text-blue-300/60">
-          <p>© {new Date().getFullYear()} Atro Repo | Visualize repositories in 3D space</p>
+          <p>© {new Date().getFullYear()} Astro Repo | Visualize repositories in 3D space</p>
         </div>
       </div>
     </div>
