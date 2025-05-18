@@ -4,6 +4,7 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { Users } from "lucide-react"
+import Image from "next/image"
 
 type Contributor = {
   login: string
@@ -15,6 +16,16 @@ type Contributor = {
 type Props = {
   owner: string
   repo: string
+}
+
+interface ApiError {
+  message: string;
+  status?: number;
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
 }
 
 const TopContributors: React.FC<Props> = ({ owner, repo }) => {
@@ -34,8 +45,9 @@ const TopContributors: React.FC<Props> = ({ owner, repo }) => {
           .sort((a: Contributor, b: Contributor) => b.contributions - a.contributions)
           .slice(0, 10) // Get top 10 contributors
         setContributors(sortedContributors)
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch contributors")
+      } catch (err: unknown) {
+        const error = err as ApiError;
+        setError(error.message || error.response?.data?.message || "Failed to fetch contributors")
       } finally {
         setLoading(false)
       }
@@ -67,15 +79,16 @@ const TopContributors: React.FC<Props> = ({ owner, repo }) => {
               href={contributor.html_url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex items-center gap-3 p-3 rounded-md ${
-                index < 3 ? "bg-[rgba(0,20,60,0.4)]" : "bg-[rgba(0,5,20,0.5)]"
-              } border border-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.1)] transition-all duration-200`}
+              className={`flex items-center gap-3 p-3 rounded-md ${index < 3 ? "bg-[rgba(0,20,60,0.4)]" : "bg-[rgba(0,5,20,0.5)]"
+                } border border-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.1)] transition-all duration-200`}
             >
               <div className="relative">
-                <img
+                <Image
                   src={contributor.avatar_url || "/placeholder.svg"}
                   alt={contributor.login}
-                  className="w-10 h-10 rounded-full border border-[rgba(255,255,255,0.1)]"
+                  width={40}
+                  height={40}
+                  className="rounded-full border border-[rgba(255,255,255,0.1)]"
                 />
                 {index < 3 && (
                   <div className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-xs font-medium text-white border border-[rgba(255,255,255,0.1)]">

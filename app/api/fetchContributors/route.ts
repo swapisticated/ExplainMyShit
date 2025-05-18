@@ -21,7 +21,7 @@ export async function GET(req: Request) {
             per_page: 100
         });
 
-        const contributors = response.data.map((contributor: any) => ({
+        const contributors = response.data.map((contributor) => ({
             login: contributor.login,
             avatar_url: contributor.avatar_url,
             contributions: contributor.contributions,
@@ -29,8 +29,12 @@ export async function GET(req: Request) {
         }));
 
         return NextResponse.json({ contributors });
-    } catch (e: any) {
-        console.error("Error fetching contributors:", e);
-        return NextResponse.json({ error: e.message }, { status: 500 });
+    } 
+     catch (e: unknown) {
+        console.error("Error fetching commits:", e);
+        if (e instanceof Error) {
+            return NextResponse.json({ error: e.message }, { status: 500 });
+        }
+        return NextResponse.json({ error: "Unknown error" }, { status: 500 });
     }
 }

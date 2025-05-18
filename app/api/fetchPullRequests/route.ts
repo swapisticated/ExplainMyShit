@@ -44,8 +44,11 @@ export async function GET(req: Request) {
     }));
 
     return NextResponse.json({ pullRequests });
-  } catch (e: any) {
-    console.error("Error fetching pull requests:", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
+  }  catch (e: unknown) {
+        console.error("Error fetching commits:", e);
+        if (e instanceof Error) {
+            return NextResponse.json({ error: e.message }, { status: 500 });
+        }
+        return NextResponse.json({ error: "Unknown error" }, { status: 500 });
+    }
 }

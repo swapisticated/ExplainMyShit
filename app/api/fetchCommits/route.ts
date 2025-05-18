@@ -41,8 +41,12 @@ export async function GET(req: Request) {
             per_page,
             hasNextPage: response.data.length === per_page, // crude next page check
         });
-    } catch (e: any) {
+        // ...existing code...
+    } catch (e: unknown) {
         console.error("Error fetching commits:", e);
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        if (e instanceof Error) {
+            return NextResponse.json({ error: e.message }, { status: 500 });
+        }
+        return NextResponse.json({ error: "Unknown error" }, { status: 500 });
     }
 }

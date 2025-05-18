@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname } from 'next/navigation'
-import { GeminiSidebar } from '../SideBar'
+// import { GeminiSidebar } from '../SideBar'
 
 export default function DefaultLayout({
   children,

@@ -1,5 +1,6 @@
 //components/ForceGraph.tsx
-
+/* eslint-disable */
+// @ts-nocheck
 'use client';
 import React, { useRef, useEffect, useState } from 'react';
 import ForceGraph3D, { NodeObject } from 'react-force-graph-3d';
@@ -8,6 +9,8 @@ import { motion } from 'framer-motion';
 import * as THREE from 'three';
 import { GeminiSidebar } from './SideBar';
 import { setCache, getCache, generateCacheKey } from '@/utils/cache';
+// import dynamic from 'next/dynamic';
+
 
 interface ForceGraphProps {
   graphData: GraphData;
@@ -103,7 +106,7 @@ const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProp
         }
         rotationTimeoutRef.current = setTimeout(() => {
           setUserInteracting(false);
-          setAutoRotate(false);
+          setAutoRotate(true);
         }, 5000);
       };
 

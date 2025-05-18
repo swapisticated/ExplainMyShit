@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Maximize2, Settings, Sparkles, Aperture, Layers, MonitorSmartphone, Info, ChevronRight, ChevronLeft } from "lucide-react"
+import { Settings, Sparkles,  Layers,  Info, ChevronRight, ChevronLeft } from "lucide-react"
 import { motion } from "framer-motion"
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -24,20 +24,21 @@ export function GeminiSidebar({ defaultOpen = false, position = "left", summary,
   const tooltipRef = React.useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const sidebarRef = React.useRef<HTMLDivElement>(null)
-  const [isHovering, setIsHovering] = React.useState(false)
+  // const [isHovering, setIsHovering] = React.useState(false)
   const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
     }
-    setIsHovering(true)
+
+    // setIsHovering(true)
     setIsOpen(true)
   }
 
   const handleMouseLeave = () => {
     hoverTimeoutRef.current = setTimeout(() => {
-      setIsHovering(false)
+      // setIsHovering(false)
       setIsOpen(true)
     }, 300) // Delay before closing
   }
@@ -219,7 +220,7 @@ export function GeminiSidebar({ defaultOpen = false, position = "left", summary,
                         li: ({ ...props }) => <li className="mb-1" {...props} />,
                         p: ({ ...props }) => <p className="text-gray-200 mb-2" {...props} />,
 
-                        code({ inline, className, children, ...props }: React.HTMLAttributes<HTMLElement> & { inline?: boolean }) {
+                        code({ inline, children, ...props }: React.HTMLAttributes<HTMLElement> & { inline?: boolean }) {
                           return inline ? (
                             <code className="bg-gray-700/60 text-gray-100 px-1 py-0.5 rounded" {...props}>
                               {children}

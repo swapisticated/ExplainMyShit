@@ -1,6 +1,27 @@
 import { Octokit } from "@octokit/rest";
 import { NextResponse } from "next/server";
 
+// Define TypeScript interfaces for our data structures
+interface RepoItem {
+    type: 'dir' | 'file';
+    path: string;
+    name: string;
+    sha: string;
+    size: number;
+    url: string;
+    html_url: string;
+    git_url: string;
+    download_url: string | null;
+    children?: RepoItem[];
+}
+
+interface GetContentOptions {
+    owner: string;
+    repo: string;
+    path: string;
+    ref?: string;
+}
+
 export async function GET(req: Request) {
     const {searchParams} = new URL(req.url);
     const owner = searchParams.get('owner');
@@ -40,12 +61,13 @@ export async function GET(req: Request) {
             branch: branch || 'default'
         });
     }
-    catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
+    catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
 
-// Recursive function to fetch repository contents including subdirectories
+// Update the function signature with proper return type
 async function fetchRepoContentsRecursively(
     octokit: Octokit,
     owner: string,
@@ -54,26 +76,22 @@ async function fetchRepoContentsRecursively(
     path: string = '',
     depth: number = 2,
     currentDepth: number = 0
-): Promise<any[]> {
-    // Stop recursion if we've reached max depth
+): Promise<RepoItem[]> {
     if (currentDepth >= depth) {
         return [];
     }
     
-    // Build request options
-    const options: any = { owner, repo, path };
+    const options: GetContentOptions = { owner, repo, path };
     if (branch) {
         options.ref = branch;
     }
     
     try {
-        // Fetch content at current path
-        const { data } = await octokit.repos.getContent(options);
+        const { data } = await octokit.repos.getContent({ ...options });
         const contents = Array.isArray(data) ? data : [data];
         
-        // For each directory, recursively fetch its contents
         for (let i = 0; i < contents.length; i++) {
-            const item = contents[i];
+            const item = contents[i] as RepoItem;
             if (item.type === 'dir') {
                 const subDirContents = await fetchRepoContentsRecursively(
                     octokit,
@@ -84,11 +102,10 @@ async function fetchRepoContentsRecursively(
                     depth,
                     currentDepth + 1
                 );
-                // Add children property to the directory
-                (item as any).children = subDirContents;
+                item.children = subDirContents;
             }
         }        
-        return contents;
+        return contents as RepoItem[];
     } catch (error) {
         console.error(`Error fetching contents at path ${path}:`, error);
         return [];

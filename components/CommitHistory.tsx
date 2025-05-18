@@ -4,7 +4,7 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { GitCommit, ChevronLeft, ChevronRight } from "lucide-react"
-
+import Image from "next/image"
 type Commit = {
   sha: string
   message: string
@@ -21,6 +21,13 @@ type Props = {
   perPage?: number
 }
 
+interface CommitResponse {
+  commits: Commit[]
+  page: number
+  per_page: number
+  hasNextPage: boolean
+}
+
 const CommitHistory: React.FC<Props> = ({ owner, repo, branch = "", perPage = 5 }) => {
   const [commits, setCommits] = useState<Commit[]>([])
   const [page, setPage] = useState(1)
@@ -32,7 +39,7 @@ const CommitHistory: React.FC<Props> = ({ owner, repo, branch = "", perPage = 5 
       setLoading(true)
       setError("")
       try {
-        const res = await axios.get("/api/fetchCommits", {
+        const res = await axios.get<CommitResponse>("/api/fetchCommits", {
           params: {
             owner,
             repo,
@@ -42,8 +49,9 @@ const CommitHistory: React.FC<Props> = ({ owner, repo, branch = "", perPage = 5 
           },
         })
         setCommits(res.data.commits)
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch commits")
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch commits"
+        setError(errorMessage)
       } finally {
         setLoading(false)
       }
@@ -82,11 +90,16 @@ const CommitHistory: React.FC<Props> = ({ owner, repo, branch = "", perPage = 5 
                 className="flex items-start gap-3 p-3 rounded-md bg-[rgba(0,5,20,0.5)] border border-[rgba(255,255,255,0.03)] 
                 hover:border-[rgba(255,255,255,0.1)] transition-all duration-200 transform hover:-translate-y-0.5"
               >
-                <img
-                  src={commit.avatar || "/default-avatar.png"}
-                  alt={commit.author}
-                  className="w-8 h-8 rounded-full border border-[rgba(255,255,255,0.1)]"
-                />
+                <div className="relative w-8 h-8">
+                  <Image
+                    src={commit.avatar || "/default-avatar.png"}
+                    alt={commit.author}
+                    width={32}
+                    height={32}
+                    className="rounded-full border border-[rgba(255,255,255,0.1)]"
+                    unoptimized // Add this if the avatars are from GitHub's CDN
+                  />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-light text-slate-200 text-sm truncate">{commit.author}</span>

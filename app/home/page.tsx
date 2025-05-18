@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 const Home = () => {
   const [url, setUrl] = useState('');
   const [branch, setBranch] = useState('');
-  const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [stars, setStars] = useState<{ top: number; left: number; size: number; delay: number }[]>([]);
 
@@ -37,10 +36,10 @@ const Home = () => {
       return alert('Invalid GitHub URL');
     }
   
-    let [_, owner, repo] = match;
+    const [, owner, repo] = match;
   
     // Remove ".git" from repo name if present
-    repo = repo.replace(/\.git$/, '');
+    const sanitizedRepo = repo.replace(/\.git$/, '');
     
     setIsLoading(true);
     
@@ -48,7 +47,7 @@ const Home = () => {
     const branchParam = branch.trim() ? `&branch=${encodeURIComponent(branch.trim())}` : '';
     
     // Redirect to visualization page with parameters
-    window.location.href = `/visualization?owner=${owner}&repo=${repo}${branchParam}`;
+    window.location.href = `/visualization?owner=${owner}&repo=${sanitizedRepo}${branchParam}`;
   }
   
   return (

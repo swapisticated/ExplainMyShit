@@ -2,8 +2,9 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import axios from "axios"
+import axios, { AxiosError } from "axios"
 import { MessageSquare, Activity } from "lucide-react"
+import Image from "next/image"
 
 type User = {
   login: string
@@ -47,8 +48,9 @@ const RepoActivity: React.FC<Props> = ({ owner, repo }) => {
         ])
         setIssues(issuesRes.data.issues)
         setPRs(prsRes.data.pullRequests)
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch repository activity")
+      } catch (err) {
+        const error = err as AxiosError
+        setError(error.message || "Failed to fetch repository activity")
       } finally {
         setLoading(false)
       }
@@ -56,16 +58,21 @@ const RepoActivity: React.FC<Props> = ({ owner, repo }) => {
     fetchData()
   }, [owner, repo])
 
-  const ActivityItem = ({ item, type }: { item: Issue | PullRequest; type: "issue" | "pr" }) => (
+  const ActivityItem = ({ item }: { item: Issue | PullRequest }) => (
     <div
       className="flex items-start gap-3 p-3 rounded-md bg-[rgba(0,5,20,0.5)] border border-[rgba(255,255,255,0.03)] 
-                    hover:border-[rgba(255,255,255,0.1)] transition-all duration-200 transform hover:-translate-y-0.5"
+                  hover:border-[rgba(255,255,255,0.1)] transition-all duration-200 transform hover:-translate-y-0.5"
     >
-      <img
-        src={item.user.avatar_url || "/placeholder.svg"}
-        alt={item.user.login}
-        className="w-8 h-8 rounded-full border border-[rgba(255,255,255,0.1)]"
-      />
+      <div className="relative w-8 h-8">
+        <Image
+          src={item.user.avatar_url || "/placeholder.svg"}
+          alt={item.user.login}
+          width={32}
+          height={32}
+          className="rounded-full border border-[rgba(255,255,255,0.1)]"
+          unoptimized
+        />
+      </div>
       <div className="flex-1 min-w-0">
         <a
           href={item.url}
@@ -141,11 +148,13 @@ const RepoActivity: React.FC<Props> = ({ owner, repo }) => {
             <span className="text-sm text-slate-400 animate-pulse">Loading activity...</span>
           </div>
         </div>
+      ) : error ? (
+        <div className="text-red-400 text-sm p-4">{error}</div>
       ) : (
         <div className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
           {activeTab === "issues"
-            ? issues.map((issue) => <ActivityItem key={issue.id} item={issue} type="issue" />)
-            : prs.map((pr) => <ActivityItem key={pr.id} item={pr} type="pr" />)}
+            ? issues.map((issue) => <ActivityItem key={issue.id} item={issue} />)
+            : prs.map((pr) => <ActivityItem key={pr.id} item={pr} />)}
 
           {(activeTab === "issues" && issues.length === 0) || (activeTab === "prs" && prs.length === 0) ? (
             <div className="text-center py-8 text-slate-400">
