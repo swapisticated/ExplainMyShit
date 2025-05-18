@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Settings, Sparkles,  Layers,  Info, ChevronRight, ChevronLeft } from "lucide-react"
+import { Settings, Sparkles, Layers, Info, ChevronRight, ChevronLeft, X } from "lucide-react"
 import { motion } from "framer-motion"
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -107,13 +107,23 @@ export function GeminiSidebar({ defaultOpen = false, position = "left", summary,
         <div className="p-2 ">
 
 
-          <div className="backdrop-blur-2xl flex h-full w-full max-w-[400px] flex-col bg-slate-600/30 rounded-xl text-white overflow-hidden z-4000"
-          // onWheel={stopScrollPropagation}
-          >
+          <div className="backdrop-blur-2xl flex h-full w-full max-w-[400px] flex-col bg-slate-600/30 rounded-xl text-white overflow-hidden z-4000">
+            {/* Add close button */}
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                onClose?.();
+              }}
+              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-700/50 transition-colors"
+              aria-label="Close sidebar"
+            >
+              <X className="w-5 h-5 text-gray-400 hover:text-gray-200" />
+            </button>
+
             {/* Header */}
             <div className="flex flex-col">
               {/* Tabs */}
-              <div className="flex w-full">
+              {/* <div className="flex w-full">
                 <button
                   onClick={() => setActiveTab("apis")}
                   className={`flex flex-1 items-center justify-center gap-2 py-3 transition-all ${activeTab === "apis"
@@ -134,7 +144,7 @@ export function GeminiSidebar({ defaultOpen = false, position = "left", summary,
                   <Layers className="h-4 w-4" />
                   <span>Tools</span>
                 </button>
-              </div>
+              </div> */}
 
               {/* Tool buttons */}
               {/* <div className="flex justify-center gap-4 p-4">
@@ -261,7 +271,7 @@ export function GeminiSidebar({ defaultOpen = false, position = "left", summary,
               <div className="mt-4">
                 <input
                   type="text"
-                  placeholder="Message Gemini..."
+                  // placeholder="Message Gemini..."
                   className="w-full rounded-full bg-gray-800/50 px-4 py-2 text-sm outline-none ring-1 ring-gray-700/50 transition-all focus:ring-purple-300/50 focus:ring"
                 />
               </div>
