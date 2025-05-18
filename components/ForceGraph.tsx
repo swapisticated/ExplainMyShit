@@ -9,6 +9,9 @@ import { motion } from 'framer-motion';
 import * as THREE from 'three';
 import { GeminiSidebar } from './SideBar';
 import { setCache, getCache, generateCacheKey } from '@/utils/cache';
+import { Info, InfoIcon } from 'lucide-react';
+import { fileTypeColors } from '@/utils/graphData';
+
 // import dynamic from 'next/dynamic';
 
 
@@ -36,6 +39,7 @@ const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProp
   const [autoRotate, setAutoRotate] = useState(true);
   const [userInteracting, setUserInteracting] = useState(false);
   const rotationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
 
   // Apply force graph configurations when component mounts
   useEffect(() => {
@@ -352,6 +356,58 @@ const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProp
     }
   }
 
+  const getUniqueFileTypes = () => {
+    const fileTypes = new Set<string>();
+    graphData.nodes.forEach(node => {
+      if (node.type === 'file') {
+        const extension = node.name.split('.').pop()?.toLowerCase();
+        if (extension && fileTypeColors[extension]) {
+          fileTypes.add(extension);
+        }
+      }
+    });
+    return Array.from(fileTypes);
+  };
+
+
+  const Legend = () => {
+    const uniqueFileTypes = getUniqueFileTypes();
+
+    return (
+      <div className="absolute top-16 right-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm p-4 rounded-lg border border-[rgba(255,255,255,0.1)]">
+        <h3 className="text-sm font-medium text-slate-200 mb-3">File Types</h3>
+        <div className="space-y-2">
+          {/* Always show directory */}
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: fileTypeColors.dir }}></div>
+            <span className="text-xs text-slate-300">Directory</span>
+          </div>
+
+          {/* Show only file types that exist in the repo */}
+          {uniqueFileTypes.map(type => (
+            <div key={type} className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: fileTypeColors[type] }}
+              ></div>
+              <span className="text-xs text-slate-300">
+                {type.toUpperCase()} {/* Show file extension in uppercase */}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+
+  const Instructions = () => (
+    <div className="absolute bottom-4 left-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm px-4 py-2 rounded-lg border border-[rgba(255,255,255,0.1)] flex items-center gap-2">
+      <InfoIcon className="w-4 h-4 text-slate-300" />
+      <p className="text-xs text-slate-300">Click files in fullscreen mode for AI summaries</p>
+    </div>
+  );
+
   return (
     <motion.div
       ref={containerRef}
@@ -380,14 +436,20 @@ const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProp
       {/* Background stars */}
 
       {/* Repository info box */}
-      <div className="absolute top-4 left-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm px-4 py-2 rounded-lg">
+      <div className="absolute top-4 left-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm px-4 py-2 rounded-lg border border-[rgba(255,255,255,0.1)]">
         <h3 className="text-lg font-semibold text-blue-300">{repoName}</h3>
         <p className="text-xs text-gray-300">Files: {graphData.nodes.length - 1} | Connections: {graphData.links.length}</p>
       </div>
 
+      {/* Add Legend */}
+      <Legend />
+
+      {/* Add Instructions */}
+      <Instructions />
+
       {/* Hovered node info */}
       {hoveredNode && (
-        <div className="absolute bottom-4 left-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm px-4 py-2 rounded-lg">
+        <div className="absolute bottom-16 left-4 z-10 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm px-4 py-2 rounded-lg border border-[rgba(255,255,255,0.1)]">
           <p className="text-sm text-blue-300">{hoveredNode.name}</p>
           <p className="text-xs text-gray-300">{hoveredNode.path} ({hoveredNode.type})</p>
         </div>
@@ -489,7 +551,7 @@ const ForceGraph = ({ graphData, repoName, owner, repo, branch }: ForceGraphProp
           material.opacity = 0.4;
           return material;
         }}
-        
+
         backgroundColor="#0a0a1f"
         width={screen.width}
         height={screen.height}

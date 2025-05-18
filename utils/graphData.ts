@@ -48,7 +48,7 @@ export interface GraphData {
 }
 
 // Color mapping for different file types
-const fileTypeColors: Record<string, string> = {
+export const fileTypeColors:  Record<string, string> = {
   // Config files
   json: '#f1e05a', // Yellow
   yml: '#cb171e', // Red

@@ -130,7 +130,7 @@ const VisualizationContent = () => {
             transition={{ duration: 0.8 }}
             className="text-2xl md:text-3xl font-light tracking-wider text-slate-100"
           >
-            Cosmic Code Explorer
+            Astro Repo
           </motion.h1>
         </div>
 
@@ -227,7 +227,7 @@ const VisualizationContent = () => {
         )}
 
         <div className="mt-16 text-center text-sm text-slate-400 opacity-70">
-          <p>© {new Date().getFullYear()} Cosmic Code Explorer | Venture through the digital universe</p>
+          <p>© {new Date().getFullYear()} Astro Repo | Venture through the digital universe</p>
         </div>
       </div>
     </div>
